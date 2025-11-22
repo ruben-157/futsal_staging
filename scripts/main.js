@@ -26,7 +26,7 @@ import {
   KEYS,
   savePrevRanksFromRows
 } from './state/storage.js';
-import { computeStableSeedFromAttendees, shuffleSeeded, mulberry32 } from './utils/random.js';
+import { computeStableSeedFromAttendees, shuffleSeeded } from './utils/random.js';
 import { balanceSkillToTargets, balanceStaminaEqualSkill } from './logic/balance.js';
 import { reportWarning } from './utils/validation.js';
 import { logError } from './utils/logging.js';
@@ -57,91 +57,10 @@ import {
   getPlayerBadgeHistory,
   buildPlayerInsightCards
 } from './logic/playerHistory.js';
-
-const HARMONY_TOKENS = ['UnViZW58UmFtdGlu'];
-function decodeHarmonyToken(token){
-  try{
-    if(typeof atob === 'function'){
-      return atob(token);
-    }
-    if(typeof globalThis !== 'undefined' && globalThis.Buffer){
-      return globalThis.Buffer.from(token, 'base64').toString('utf8');
-    }
-  }catch(_){}
-  return '';
-}
-const harmonyPairs = HARMONY_TOKENS
-  .map(token => {
-    const decoded = decodeHarmonyToken(token);
-    if(!decoded) return null;
-    const parts = decoded.split('|').map(s => s.trim()).filter(Boolean);
-    return parts.length === 2 ? parts : null;
-  })
-  .filter(Boolean);
-const harmonyPairKeys = new Set(harmonyPairs.map(([a,b]) => [a,b].sort((x,y)=>x.localeCompare(y)).join('|')));
-const HARMONY_PENALTY = 0.4;
-
-function isHarmonyPair(a,b){
-  if(!a || !b) return false;
-  return harmonyPairKeys.has([a,b].sort((x,y)=>x.localeCompare(y)).join('|'));
-}
-function computeHarmonyBias(members=[], candidate){
-  if(!candidate || !Array.isArray(members) || members.length === 0) return 0;
-  let bias = 0;
-  for(const member of members){
-    if(isHarmonyPair(member, candidate)){
-      bias += HARMONY_PENALTY;
-    }
-  }
-  return bias;
-}
-function applyRosterHarmonyFinal(teams){
-  if(!Array.isArray(teams) || teams.length < 2 || harmonyPairs.length === 0) return;
-  for(const [a,b] of harmonyPairs){
-    if(!a || !b) continue;
-    let teamA = null, teamB = null;
-    for(const team of teams){
-      if(team.members && team.members.includes(a)) teamA = team;
-      if(team.members && team.members.includes(b)) teamB = team;
-    }
-    if(!teamA || !teamB || teamA !== teamB) continue;
-    const conflictTeam = teamA;
-    const pairMembers = [a, b];
-    let bestSwap = null;
-    for(const moving of pairMembers){
-      const counterpart = moving === a ? b : a;
-      for(const target of teams){
-        if(target === conflictTeam) continue;
-        if(target.members && target.members.includes(counterpart)) continue;
-        if(!Array.isArray(target.members) || target.members.length === 0) continue;
-        for(const swapCandidate of target.members){
-          if(isHarmonyPair(swapCandidate, counterpart)) continue;
-          const skillGap = Math.abs(getSkill(moving) - getSkill(swapCandidate));
-          const staminaGap = Math.abs(getStamina(moving) - getStamina(swapCandidate)) * 0.05;
-          const score = skillGap + staminaGap;
-          if(!bestSwap || score < bestSwap.score){
-            bestSwap = {
-              score,
-              fromTeam: conflictTeam,
-              toTeam: target,
-              moving,
-              swapCandidate
-            };
-          }
-        }
-      }
-    }
-    if(bestSwap){
-      const fromIdx = bestSwap.fromTeam.members.indexOf(bestSwap.moving);
-      const toIdx = bestSwap.toTeam.members.indexOf(bestSwap.swapCandidate);
-      if(fromIdx !== -1 && toIdx !== -1){
-        bestSwap.fromTeam.members[fromIdx] = bestSwap.swapCandidate;
-        bestSwap.toTeam.members[toIdx] = bestSwap.moving;
-      }
-    }
-  }
-}
-
+import { showToast, launchConfetti } from './utils/notify.js';
+import { showHypeToastForMatch } from './utils/hype.js';
+import { orderRoundPairings, computeStreaksUpTo as computeStreaksUpToLogic } from './logic/schedule.js';
+import { computeHarmonyBias, applyRosterHarmonyFinal } from './logic/harmony.js';
 
 
 function clampPlayLimit(){
@@ -207,43 +126,6 @@ function setupDnD(){ /* DnD disabled in single-list selection UI */ }
 
 
 // Order pairings within a round to avoid any team playing 3 matches in a row across the schedule
-function orderRoundPairings(pairs, streakMap, seed){
-  // Special case: 4 teams use classic round-robin order
-  // A-B, C-D, A-C, B-D, A-D, B-C
-  if(state.teams && state.teams.length === 4){
-    const teams4 = [...state.teams].sort((a,b)=> a.id - b.id);
-    const [A,B,C,D] = teams4;
-    return [[A,B],[C,D],[A,C],[B,D],[A,D],[B,C]];
-  }
-  const rng = mulberry32((seed >>> 0));
-  // Shuffle a copy to vary the base order deterministically
-  const remaining = [...pairs].sort(() => rng() - 0.5);
-  const ordered = [];
-  const teamIds = state.teams.map(t => t.id);
-  while(remaining.length){
-    let pickIdx = -1;
-    for(let i=0;i<remaining.length;i++){
-      const aId = remaining[i][0].id, bId = remaining[i][1].id;
-      const sa = streakMap.get(aId) || 0;
-      const sb = streakMap.get(bId) || 0;
-      if(sa < 2 && sb < 2){ pickIdx = i; break; }
-    }
-    if(pickIdx === -1){
-      // Fallback: pick the first; we will still ensure not to exceed constraint by trying simple swap with previous
-      pickIdx = 0;
-    }
-    const [a,b] = remaining.splice(pickIdx,1)[0];
-    ordered.push([a,b]);
-    // Update streaks: participants +1, others reset
-    for(const id of teamIds){
-      if(id === a.id || id === b.id){ streakMap.set(id, (streakMap.get(id)||0) + 1); }
-      else { streakMap.set(id, 0); }
-    }
-  }
-  return ordered;
-}
-
-
 function emailSummary(appState, computeGoalStatsFn){
   const subject = buildEmailSubject(new Date());
   const body = buildEmailSummaryText(appState, computeGoalStatsFn);
@@ -599,49 +481,6 @@ function celebrateWinner(){
   launchConfetti();
 }
 
-function showToast(text, extraClass){
-  const t = document.createElement('div');
-  t.className = 'toast' + (extraClass ? (' ' + extraClass) : '');
-  t.setAttribute('role','status');
-  t.setAttribute('aria-live','polite');
-  t.innerHTML = `<span class="emoji">🎉</span><span>${text}</span>`;
-  document.body.appendChild(t);
-  setTimeout(()=>{ t.remove(); }, 4000);
-}
-
-// Fun hype messages after each saved result
-const HYPE_MESSAGES = [
-  'Team {TEAM} is on fire!',
-  '{TEAM} turning up the heat!',
-  '{TEAM} are flying!',
-  'Unstoppable {TEAM}!',
-  '{TEAM} with a statement win!',
-  '{TEAM} grind it out!',
-  'Clinical from {TEAM}.',
-  '{TEAM} take the spoils!',
-  '{TEAM} are cooking!',
-  '{TEAM} bringing the smoke!',
-  'Another one for {TEAM}!',
-  '{TEAM} mean business!',
-  '{TEAM} hit different today!',
-  '{TEAM} ice cold.',
-  '{TEAM} lock it in.',
-  '{TEAM} with the dagger!',
-  '{TEAM} seal the deal!',
-  'Big dub for {TEAM}!',
-  '{TEAM} with the clean finish!',
-  '{TEAM} levels up!',
-  'Momentum with {TEAM}!',
-  '{TEAM} marches on!',
-  'Vintage {TEAM}!',
-];
-const DRAW_MESSAGES = [
-  'All square — what a battle!',
-  'Deadlock! Nothing between them.',
-  'Honors even!',
-  'Stalemate — tight one.',
-  'Shared spoils!',
-];
 // Schedule helper used by streak computation and sharing
 function getFixedOrderedPairs(){
   if(!state.teams || state.teams.length < 2) return [];
@@ -682,94 +521,16 @@ function getFixedOrderedPairs(){
 
 // Compute current W/L/D streaks up to and including a specific match
 function computeStreaksUpTo(matchId){
-  const streaks = new Map(); // id -> { type: 'W'|'L'|'D'|null, len: number }
-  for(const t of (state.teams||[])) streaks.set(t.id, { type: null, len: 0 });
-  if(!state.teams || state.teams.length<2) return streaks;
-  const totalRounds = Math.max(1, Number(state.rounds) || 2);
-  const fixedOrdered = getFixedOrderedPairs();
-  const endOn = String(matchId);
-  let done = false;
-  for(let r=1; r<=totalRounds && !done; r++){
-    for(const [a,b] of fixedOrdered){
-      const id = `${Math.min(a.id,b.id)}-${Math.max(a.id,b.id)}-r${r}`;
-      const rec = state.results[id];
-      if(!rec || rec.ga==null || rec.gb==null){
-        if(id === endOn){ done = true; break; }
-        continue;
-      }
-      let aType = 'D', bType = 'D';
-      if(rec.ga > rec.gb){ aType='W'; bType='L'; }
-      else if(rec.gb > rec.ga){ aType='L'; bType='W'; }
-      const sa = streaks.get(a.id); const sb = streaks.get(b.id);
-      if(sa.type === aType){ sa.len += 1; } else { sa.type = aType; sa.len = 1; }
-      if(sb.type === bType){ sb.len += 1; } else { sb.type = bType; sb.len = 1; }
-      if(id === endOn){ done = true; break; }
-    }
-  }
-  return streaks;
+  return computeStreaksUpToLogic(state, matchId, getFixedOrderedPairs);
 }
 
 function showHypeToastForMatch(matchId, aTeam, bTeam){
-  const rec = state.results[matchId];
-  if(!rec) return;
-  const { ga, gb } = rec;
-  if(ga === gb){
-    const msg = DRAW_MESSAGES[Math.floor(Math.random()*DRAW_MESSAGES.length)];
-    showToast(msg);
-    return;
-  }
-  const fixedOrdered = getFixedOrderedPairs(); // ensure deterministic order exists
-  const streaks = computeStreaksUpTo(matchId);
-  const aSt = streaks.get(aTeam.id) || { type:null, len:0 };
-  const bSt = streaks.get(bTeam.id) || { type:null, len:0 };
-  const winner = ga > gb ? aTeam : bTeam;
-  const loser = ga > gb ? bTeam : aTeam;
-  const wSt = ga > gb ? aSt : bSt;
-  const lSt = ga > gb ? bSt : aSt;
-  const WNAME = String(winner.name || 'Winners').toUpperCase();
-  const LNAME = String(loser.name || 'Losers').toUpperCase();
-
-  // Winner phrase
-  let line = '';
-  if(wSt.type === 'W' && wSt.len >= 2){
-    const streakStr = (wSt.len === 2) ? 'two in a row' : (wSt.len === 3 ? 'a hat‑trick of wins' : `${wSt.len} straight`);
-    const winStreakMsgs = [
-      `TEAM ${WNAME} keep rolling — ${streakStr}!`,
-      `TEAM ${WNAME} extend the streak: ${streakStr}!`,
-      `Unbeatable! TEAM ${WNAME} now on ${streakStr}.`,
-      `Momentum with TEAM ${WNAME}: ${streakStr}!`,
-    ];
-    line = winStreakMsgs[Math.floor(Math.random()*winStreakMsgs.length)];
-  } else {
-    const winMsgs = [
-      `TEAM ${WNAME} take it!`,
-      `Big win for TEAM ${WNAME}!`,
-      `Clinical from TEAM ${WNAME}.`,
-      `Statement win by TEAM ${WNAME}!`,
-      `TEAM ${WNAME} seal the deal!`,
-    ];
-    line = winMsgs[Math.floor(Math.random()*winMsgs.length)];
-  }
-
-  // Losing phrase (if consecutive losses)
-  if(lSt.type === 'L' && lSt.len >= 2){
-    const losingStr = (lSt.len === 2) ? 'two on the bounce' : `${lSt.len} straight`;
-    const loseMsgs = [
-      ` Tough stretch for TEAM ${LNAME} — ${losingStr}.`,
-      ` TEAM ${LNAME} drop ${losingStr}.`,
-      ` Skid continues for TEAM ${LNAME}: ${losingStr}.`,
-    ];
-    line += loseMsgs[Math.floor(Math.random()*loseMsgs.length)];
-  } else {
-    const singleLoseMsgs = [
-      ` Tough one for TEAM ${LNAME}.`,
-      ` TEAM ${LNAME} will look to bounce back.`,
-      ` TEAM ${LNAME} just short today.`,
-    ];
-    line += singleLoseMsgs[Math.floor(Math.random()*singleLoseMsgs.length)];
-  }
-
-  showToast(line);
+  showHypeToastForMatch({
+    matchId,
+    state,
+    computeStreaksUpTo,
+    getFixedOrderedPairs
+  });
 }
 
 function launchConfetti(){

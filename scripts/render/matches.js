@@ -24,7 +24,7 @@ export function renderSchedule(state, opts){
   const totalRounds = Math.max(1, Number(state.rounds) || 2);
   let nextMarked = false;
   const baseStreak = new Map(state.teams.map(t => [t.id, 0]));
-  const baseOrdered = orderRoundPairings(pairings, baseStreak, stableSeed);
+  const baseOrdered = orderRoundPairings(state, pairings, baseStreak, stableSeed);
   function createsTriple(order){
     const ids = state.teams.map(t=>t.id);
     const streak = new Map(ids.map(id=>[id,0]));
