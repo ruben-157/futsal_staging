@@ -58,7 +58,7 @@ import {
   buildPlayerInsightCards
 } from './logic/playerHistory.js';
 import { showToast, launchConfetti } from './utils/notify.js';
-import { showHypeToastForMatch } from './utils/hype.js';
+import { showHypeToastForMatch as showHypeToastExternal } from './utils/hype.js';
 import { orderRoundPairings, computeStreaksUpTo as computeStreaksUpToLogic } from './logic/schedule.js';
 import { computeHarmonyBias, applyRosterHarmonyFinal } from './logic/harmony.js';
 
@@ -525,7 +525,7 @@ function computeStreaksUpTo(matchId){
 }
 
 function showHypeToastForMatch(matchId, aTeam, bTeam){
-  showHypeToastForMatch({
+  showHypeToastExternal({
     matchId,
     state,
     computeStreaksUpTo,
