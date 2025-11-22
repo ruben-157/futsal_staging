@@ -533,25 +533,6 @@ function showHypeToastForMatch(matchId, aTeam, bTeam){
   });
 }
 
-function launchConfetti(){
-  const colors = ['#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899'];
-  const count = 80;
-  const nodes = [];
-  for(let i=0;i<count;i++){
-    const c = document.createElement('div');
-    c.className = 'confetti';
-    const left = Math.random()*100;
-    const dur = 2.8 + Math.random()*1.8;
-    const delay = Math.random()*0.5;
-    c.style.left = left + 'vw';
-    c.style.background = colors[i % colors.length];
-    c.style.animation = `confetti-fall ${dur}s linear ${delay}s forwards`;
-    document.body.appendChild(c);
-    nodes.push(c);
-  }
-  setTimeout(()=> nodes.forEach(n=> n.remove()), 5000);
-}
-
 function generateTeams(){
   const n = state.attendees.length;
   if(n < 8){
