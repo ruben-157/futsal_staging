@@ -667,7 +667,6 @@ resultModal = attachResultModal({
   saveResults,
   renderSchedule,
   renderLeaderboard,
-  renderTopScorers,
   computeGoalStats,
   logError,
   areAllMatchesScored,

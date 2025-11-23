@@ -1,4 +1,4 @@
-export function attachResultModal({ state, getTrackScorersPref, setTrackScorersPref, saveResults, renderSchedule, renderLeaderboard, renderTopScorers, computeGoalStats, logError, areAllMatchesScored, closeOverlay, onTournamentComplete }){
+export function attachResultModal({ state, getTrackScorersPref, setTrackScorersPref, saveResults, renderSchedule, renderLeaderboard, computeGoalStats, logError, areAllMatchesScored, closeOverlay, onTournamentComplete }){
   let modalCtx = null; // { matchId, aId, bId, round }
   const overlay = document.getElementById('overlay');
   const modal = document.getElementById('resultModal');
