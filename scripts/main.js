@@ -331,7 +331,7 @@ function generateTeamsOverride(tOverride){
   state.rounds = 2;
   localStorage.removeItem(KEYS.prevRanks);
   saveTeams(); saveResults(); saveRounds();
-  renderTeams(); renderRosterUI(); renderSchedule(state, { resultModal, orderRoundPairings, computeStableSeedFromAttendees }); renderLeaderboard();
+  renderTeams(state); renderRosterUI(); renderSchedule(state, { resultModal, orderRoundPairings, computeStableSeedFromAttendees }); renderLeaderboard();
   switchTab('teams'); updateTabsUI();
 }
 
@@ -392,7 +392,7 @@ function resetAll(){
   updateGenError('');
   closeResultModal();
   renderRosterUI();
-  renderTeams();
+  renderTeams(state);
   renderSchedule(state, { resultModal, orderRoundPairings, computeStableSeedFromAttendees });
   renderLeaderboard();
   switchTab('players');
@@ -1089,7 +1089,7 @@ function unlockBodyScroll(){
 loadState();
 // Initial UI
 renderRosterUI();
-renderTeams();
+renderTeams(state);
 renderSchedule(state, { resultModal, orderRoundPairings, computeStableSeedFromAttendees });
 renderLeaderboard();
 renderAllTime(true);
