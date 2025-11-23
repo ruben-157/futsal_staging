@@ -786,12 +786,7 @@ if(btnAllTimeHeader){ btnAllTimeHeader.addEventListener('click', ()=> switchTab(
 const btnAllTimeRefresh = document.getElementById('btnAllTimeRefresh');
 if(btnAllTimeRefresh){ btnAllTimeRefresh.addEventListener('click', ()=> renderAllTime(true)); }
 
-// ----- All-Time Leaderboard (CSV: ecgfutsal2025-26.txt) -----
-let allTimeCache = { rows: null, warnings: [], skipped: 0, ts: 0 };
-let allTimeSort = { key: 'points', dir: 'desc' }; // default: Total Points desc
-// Basis for header insight cards' rank comparisons (only changes when user selects Points or Pts/Session)
-let allTimeInsightBasis = 'points'; // 'points' | 'ppm'
-const ALLTIME_ALPHA = 5; // smoothing factor for Pts/Session thresholds
+// Modal/renderer instances (initialized later)
 let resultModal = null;
 let resetModal = null;
 let teamCountModal = null;
@@ -799,6 +794,13 @@ let endTournamentModal = null;
 let removeRoundModal = null;
 let addPlayerModal = null;
 let playerHistoryModal = null;
+
+// ----- All-Time Leaderboard (CSV: ecgfutsal2025-26.txt) -----
+let allTimeCache = { rows: null, warnings: [], skipped: 0, ts: 0 };
+let allTimeSort = { key: 'points', dir: 'desc' }; // default: Total Points desc
+// Basis for header insight cards' rank comparisons (only changes when user selects Points or Pts/Session)
+let allTimeInsightBasis = 'points'; // 'points' | 'ppm'
+const ALLTIME_ALPHA = 5; // smoothing factor for Pts/Session thresholds
 const BADGE_CONFIG = {
   latestTop: { icon:'⭐', label:'Session Top Scorer', short:'Session Top Scorer', desc:'Led the latest session in goals.' },
   playmaker: { icon:'🎖️', label:'Playmaker', short:'Playmaker', desc:'Highest points+goals contribution in the latest session.' },
