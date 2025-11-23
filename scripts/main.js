@@ -668,6 +668,62 @@ function copyTeams(){
   });
 }
 
+
+
+
+const BADGE_CONFIG = {
+  latestTop: { icon:'⭐', label:'Session Top Scorer', short:'Session Top Scorer', desc:'Led the latest session in goals.' },
+  playmaker: { icon:'🎖️', label:'Playmaker', short:'Playmaker', desc:'Highest points+goals contribution in the latest session.' },
+  allTimeTop: { icon:'🥇', label:'All-Time Topscorer', short:'All-Time Topscorer', desc:'Most total goals across all sessions.' },
+  clutch: { icon:'🏆', label:'Session Ace', short:'Session Ace', desc:'Most sessions finishing with the highest points.' },
+  hatTrick: { icon:'⚽', label:'Three In A Row', short:'Three In A Row', desc:'Scored in 3+ consecutive goal-tracked sessions.' },
+  fourRow: { icon:'⚽', label:'Four In A Row', short:'Four In A Row', desc:'Scored in 4+ consecutive goal-tracked sessions.' },
+  fiveRow: { icon:'⚽', label:'Five In A Row', short:'Five In A Row', desc:'Scored in 5+ consecutive goal-tracked sessions.' },
+  sixRow: { icon:'⚽', label:'Six In A Row', short:'Six In A Row', desc:'Scored in 6+ consecutive goal-tracked sessions.' },
+  sevenRow: { icon:'⚽', label:'Seven In A Row', short:'Seven In A Row', desc:'Scored in 7+ consecutive goal-tracked sessions.' },
+  eightRow: { icon:'⚽', label:'Eight In A Row', short:'Eight In A Row', desc:'Scored in 8+ consecutive goal-tracked sessions.' },
+  nineRow: { icon:'⚽', label:'Nine In A Row', short:'Nine In A Row', desc:'Scored in 9+ consecutive goal-tracked sessions.' },
+  tenRow: { icon:'⚽', label:'Ten In A Row', short:'Ten In A Row', desc:'Scored in 10+ consecutive goal-tracked sessions.' },
+  sharpshooter: { icon:'🎯', label:'Sharpshooter', short:'Sharpshooter', desc:'Averages 2+ goals per tracked session.' },
+  ironMan: { icon:'🛡️', label:'Iron Man', short:'Iron Man', desc:'Current streak of 6+ consecutive sessions.' },
+  marathon: { icon:'🏃‍♂️', label:'Marathon Man', short:'Marathon Man', desc:'Current streak of 15 consecutive sessions.' },
+  addict: { icon:'🔥', label:'Addict', short:'Addict', desc:'90%+ attendance this season.' },
+  clinical: { icon:'🥾', label:'Clinical Finisher', short:'Clinical Finisher', desc:'Scored 5+ goals in a single session.' },
+  elite: { icon:'🧠', label:'Elite', short:'Elite', desc:'On the winning team in 3 consecutive sessions.' },
+  master: { icon:'🥋', label:'Master', desc:'On the winning team in 4 consecutive sessions.', short:'Master' },
+  legend: { icon:'🦁', label:'Legend', short:'Legend', desc:'On the winning team in 5 consecutive sessions.' },
+  rocket: { icon:'📈', label:'Rocket Rank', short:'Rocket Rank', desc:'Improved rank by 5+ positions since last session.' },
+  form: { icon:'⚡', label:'On Fire', short:'On Fire', desc:'Largest positive form swing (last 3 vs career PPM).' },
+  coldStreak: { icon:'🥶', label:'Cold Streak', short:'Cold Streak', desc:'Largest negative form swing (last 3 vs career PPM).' },
+  mvp: { icon:'👑', label:'Most Valuable Player', short:'Most Valuable Player', desc:'Highest Pts/Session with ≥60% attendance.' },
+};
+const TROPHY_DESC = {
+  latestTop: 'Held the Session Top Scorer badge for {N} sessions.',
+  playmaker: 'Held the Playmaker badge for {N} sessions.',
+  allTimeTop: 'Held the All-Time Topscorer badge for {N} sessions.',
+  mvp: 'Held the Most Valuable Player badge for {N} sessions.',
+  form: 'Held the On Fire badge for {N} sessions.',
+  ironMan: 'Completed a 6+ session attendance streak.',
+  marathon: 'Completed a 15-session attendance streak.',
+  clinical: 'Held the Clinical Finisher badge for {N} sessions.',
+  elite: 'On the winning team in 3 consecutive sessions.',
+  master: 'On the winning team in 4 consecutive sessions.',
+  legend: 'On the winning team in 5 consecutive sessions.',
+  clutch: 'Most sessions finishing with the highest points.',
+  hatTrick: 'Scored in 3+ consecutive goal-tracked sessions.',
+  fourRow: 'Scored in 4+ consecutive goal-tracked sessions.',
+  fiveRow: 'Scored in 5+ consecutive goal-tracked sessions.',
+  sixRow: 'Scored in 6+ consecutive goal-tracked sessions.',
+  sevenRow: 'Scored in 7+ consecutive goal-tracked sessions.',
+  eightRow: 'Scored in 8+ consecutive goal-tracked sessions.',
+  nineRow: 'Scored in 9+ consecutive goal-tracked sessions.',
+  tenRow: 'Scored in 10+ consecutive goal-tracked sessions.',
+  sharpshooter: 'Averages 2+ goals per tracked session.',
+  rocket: 'Improved rank by 5+ positions since last session.',
+  coldStreak: 'Largest negative form swing (last 3 vs career PPM).'
+};
+const BADGE_PRIORITY = ['playmaker','clutch','latestTop','allTimeTop','mvp','clinical','legend','master','elite','tenRow','nineRow','eightRow','sevenRow','sixRow','fiveRow','fourRow','hatTrick','sharpshooter','form','coldStreak','ironMan','marathon','addict','rocket'];
+
 // ----- Wire up -----
 resultModal = attachResultModal({
   state,
@@ -801,58 +857,6 @@ let allTimeSort = { key: 'points', dir: 'desc' }; // default: Total Points desc
 // Basis for header insight cards' rank comparisons (only changes when user selects Points or Pts/Session)
 let allTimeInsightBasis = 'points'; // 'points' | 'ppm'
 const ALLTIME_ALPHA = 5; // smoothing factor for Pts/Session thresholds
-const BADGE_CONFIG = {
-  latestTop: { icon:'⭐', label:'Session Top Scorer', short:'Session Top Scorer', desc:'Led the latest session in goals.' },
-  playmaker: { icon:'🎖️', label:'Playmaker', short:'Playmaker', desc:'Highest points+goals contribution in the latest session.' },
-  allTimeTop: { icon:'🥇', label:'All-Time Topscorer', short:'All-Time Topscorer', desc:'Most total goals across all sessions.' },
-  clutch: { icon:'🏆', label:'Session Ace', short:'Session Ace', desc:'Most sessions finishing with the highest points.' },
-  hatTrick: { icon:'⚽', label:'Three In A Row', short:'Three In A Row', desc:'Scored in 3+ consecutive goal-tracked sessions.' },
-  fourRow: { icon:'⚽', label:'Four In A Row', short:'Four In A Row', desc:'Scored in 4+ consecutive goal-tracked sessions.' },
-  fiveRow: { icon:'⚽', label:'Five In A Row', short:'Five In A Row', desc:'Scored in 5+ consecutive goal-tracked sessions.' },
-  sixRow: { icon:'⚽', label:'Six In A Row', short:'Six In A Row', desc:'Scored in 6+ consecutive goal-tracked sessions.' },
-  sevenRow: { icon:'⚽', label:'Seven In A Row', short:'Seven In A Row', desc:'Scored in 7+ consecutive goal-tracked sessions.' },
-  eightRow: { icon:'⚽', label:'Eight In A Row', short:'Eight In A Row', desc:'Scored in 8+ consecutive goal-tracked sessions.' },
-  nineRow: { icon:'⚽', label:'Nine In A Row', short:'Nine In A Row', desc:'Scored in 9+ consecutive goal-tracked sessions.' },
-  tenRow: { icon:'⚽', label:'Ten In A Row', short:'Ten In A Row', desc:'Scored in 10+ consecutive goal-tracked sessions.' },
-  sharpshooter: { icon:'🎯', label:'Sharpshooter', short:'Sharpshooter', desc:'Averages 2+ goals per tracked session.' },
-  ironMan: { icon:'🛡️', label:'Iron Man', short:'Iron Man', desc:'Current streak of 6+ consecutive sessions.' },
-  marathon: { icon:'🏃‍♂️', label:'Marathon Man', short:'Marathon Man', desc:'Current streak of 15 consecutive sessions.' },
-  addict: { icon:'🔥', label:'Addict', short:'Addict', desc:'90%+ attendance this season.' },
-  clinical: { icon:'🥾', label:'Clinical Finisher', short:'Clinical Finisher', desc:'Scored 5+ goals in a single session.' },
-  elite: { icon:'🧠', label:'Elite', short:'Elite', desc:'On the winning team in 3 consecutive sessions.' },
-  master: { icon:'🥋', label:'Master', short:'Master', desc:'On the winning team in 4 consecutive sessions.' },
-  legend: { icon:'🦁', label:'Legend', short:'Legend', desc:'On the winning team in 5 consecutive sessions.' },
-  rocket: { icon:'📈', label:'Rocket Rank', short:'Rocket Rank', desc:'Improved rank by 5+ positions since last session.' },
-  form: { icon:'⚡', label:'On Fire', short:'On Fire', desc:'Largest positive form swing (last 3 vs career PPM).' },
-  coldStreak: { icon:'🥶', label:'Cold Streak', short:'Cold Streak', desc:'Largest negative form swing (last 3 vs career PPM).' },
-  mvp: { icon:'👑', label:'Most Valuable Player', short:'Most Valuable Player', desc:'Highest Pts/Session with ≥60% attendance.' },
-};
-const TROPHY_DESC = {
-  latestTop: 'Held the Session Top Scorer badge for {N} sessions.',
-  playmaker: 'Held the Playmaker badge for {N} sessions.',
-  allTimeTop: 'Held the All-Time Topscorer badge for {N} sessions.',
-  mvp: 'Held the Most Valuable Player badge for {N} sessions.',
-  form: 'Held the On Fire badge for {N} sessions.',
-  ironMan: 'Completed a 6+ session attendance streak.',
-  marathon: 'Completed a 15-session attendance streak.',
-  clinical: 'Held the Clinical Finisher badge for {N} sessions.',
-  elite: 'On the winning team in 3 consecutive sessions.',
-  master: 'On the winning team in 4 consecutive sessions.',
-  legend: 'On the winning team in 5 consecutive sessions.',
-  clutch: 'Most sessions finishing with the highest points.',
-  hatTrick: 'Scored in 3+ consecutive goal-tracked sessions.',
-  fourRow: 'Scored in 4+ consecutive goal-tracked sessions.',
-  fiveRow: 'Scored in 5+ consecutive goal-tracked sessions.',
-  sixRow: 'Scored in 6+ consecutive goal-tracked sessions.',
-  sevenRow: 'Scored in 7+ consecutive goal-tracked sessions.',
-  eightRow: 'Scored in 8+ consecutive goal-tracked sessions.',
-  nineRow: 'Scored in 9+ consecutive goal-tracked sessions.',
-  tenRow: 'Scored in 10+ consecutive goal-tracked sessions.',
-  sharpshooter: 'Averages 2+ goals per tracked session.',
-  rocket: 'Improved rank by 5+ positions since last session.',
-  coldStreak: 'Largest negative form swing (last 3 vs career PPM).'
-};
-const BADGE_PRIORITY = ['playmaker','clutch','latestTop','allTimeTop','mvp','clinical','legend','master','elite','tenRow','nineRow','eightRow','sevenRow','sixRow','fiveRow','fourRow','hatTrick','sharpshooter','form','coldStreak','ironMan','marathon','addict','rocket'];
 async function renderAllTime(force=false){
   const wrap = document.getElementById('allTimeContent');
   if(!wrap) return;
