@@ -62,6 +62,15 @@ import { showHypeToastForMatch as showHypeToastExternal } from './utils/hype.js'
 import { orderRoundPairings, computeStreaksUpTo as computeStreaksUpToLogic } from './logic/schedule.js';
 import { computeHarmonyBias, applyRosterHarmonyFinal } from './logic/harmony.js';
 
+// Modal/renderer instances (initialized later)
+let resultModal = null;
+let resetModal = null;
+let teamCountModal = null;
+let endTournamentModal = null;
+let removeRoundModal = null;
+let addPlayerModal = null;
+let playerHistoryModal = null;
+
 
 function clampPlayLimit(){
   const over = state.attendees.length > MAX_ATTENDEES;
@@ -785,15 +794,6 @@ const btnAllTimeHeader = document.getElementById('btnAllTimeHeader');
 if(btnAllTimeHeader){ btnAllTimeHeader.addEventListener('click', ()=> switchTab('alltime')); }
 const btnAllTimeRefresh = document.getElementById('btnAllTimeRefresh');
 if(btnAllTimeRefresh){ btnAllTimeRefresh.addEventListener('click', ()=> renderAllTime(true)); }
-
-// Modal/renderer instances (initialized later)
-let resultModal = null;
-let resetModal = null;
-let teamCountModal = null;
-let endTournamentModal = null;
-let removeRoundModal = null;
-let addPlayerModal = null;
-let playerHistoryModal = null;
 
 // ----- All-Time Leaderboard (CSV: ecgfutsal2025-26.txt) -----
 let allTimeCache = { rows: null, warnings: [], skipped: 0, ts: 0 };
