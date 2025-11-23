@@ -356,6 +356,7 @@ function moveToPlay(name){
   // keep teams if any? Spec doesn't forbid changing attendees post teams; leave teams intact.
   clampPlayLimit();
   renderRosterUI();
+  syncGenerateButton();
   updateTabsUI();
 }
 function moveToNot(name){
@@ -365,6 +366,7 @@ function moveToNot(name){
     saveAttendees();
     clampPlayLimit();
     renderRosterUI();
+    syncGenerateButton();
     updateTabsUI();
   }
 }
@@ -376,6 +378,20 @@ const rosterActions = {
 };
 function renderRosterUI(){
   renderRoster(state, rosterActions);
+}
+
+function syncGenerateButton(){
+  const btn = document.getElementById('btnGenerateBottom');
+  if(!btn) return;
+  const hasTeams = state.teams && state.teams.length > 0;
+  const minNeeded = 8;
+  const enough = (state.attendees || []).length >= minNeeded;
+  btn.disabled = hasTeams || !enough;
+  if(!enough){
+    updateGenError(`Select at least ${minNeeded} players to generate teams.`);
+  } else {
+    updateGenError('');
+  }
 }
 
 function resetAll(){
@@ -397,6 +413,7 @@ function resetAll(){
   renderLeaderboard(state);
   switchTab('players');
   updateTabsUI();
+  syncGenerateButton();
 }
 
 function addAdditionalRound(){
@@ -1094,6 +1111,7 @@ renderSchedule(state, { resultModal, orderRoundPairings, computeStableSeedFromAt
 renderLeaderboard(state);
 renderAllTime(true);
 clampPlayLimit();
+syncGenerateButton();
 // Ensure buttons/visibility synced on first load
 updateTabsUI();
 updateTabsUI();
