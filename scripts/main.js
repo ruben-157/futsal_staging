@@ -380,6 +380,16 @@ function renderRosterUI(){
   renderRoster(state, rosterActions);
 }
 
+function closeResultModal(){
+  try{
+    if(resultModal && typeof resultModal.close === 'function'){
+      resultModal.close();
+    }
+    const overlay = document.getElementById('overlay');
+    if(overlay){ overlay.hidden = true; }
+  }catch(_){}
+}
+
 function syncGenerateButton(){
   const btn = document.getElementById('btnGenerateBottom');
   if(!btn) return;
