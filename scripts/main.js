@@ -331,7 +331,7 @@ function generateTeamsOverride(tOverride){
   state.rounds = 2;
   localStorage.removeItem(KEYS.prevRanks);
   saveTeams(); saveResults(); saveRounds();
-  renderTeams(); renderRoster(); renderSchedule(state, { resultModal, orderRoundPairings, computeStableSeedFromAttendees }); renderLeaderboard();
+  renderTeams(); renderRosterUI(); renderSchedule(state, { resultModal, orderRoundPairings, computeStableSeedFromAttendees }); renderLeaderboard();
   switchTab('teams'); updateTabsUI();
 }
 
@@ -355,7 +355,7 @@ function moveToPlay(name){
   saveAttendees();
   // keep teams if any? Spec doesn't forbid changing attendees post teams; leave teams intact.
   clampPlayLimit();
-  renderRoster();
+  renderRosterUI();
   updateTabsUI();
 }
 function moveToNot(name){
@@ -364,9 +364,18 @@ function moveToNot(name){
     state.attendees.splice(idx,1);
     saveAttendees();
     clampPlayLimit();
-    renderRoster();
+    renderRosterUI();
     updateTabsUI();
   }
+}
+
+const rosterActions = {
+  addPlayer: moveToPlay,
+  removePlayer: moveToNot,
+  movePlayer: ()=>{}
+};
+function renderRosterUI(){
+  renderRoster(state, rosterActions);
 }
 
 function resetAll(){
@@ -382,7 +391,7 @@ function resetAll(){
   saveRounds();
   updateGenError('');
   closeResultModal();
-  renderRoster();
+  renderRosterUI();
   renderTeams();
   renderSchedule(state, { resultModal, orderRoundPairings, computeStableSeedFromAttendees });
   renderLeaderboard();
@@ -645,7 +654,7 @@ function generateTeams(){
   saveResults();
   saveRounds();
   renderTeams();
-  renderRoster();
+  renderRosterUI();
   renderSchedule(state, { resultModal, orderRoundPairings, computeStableSeedFromAttendees });
   renderLeaderboard();
   switchTab('teams');
@@ -755,7 +764,7 @@ addPlayerModal = attachAddPlayerModal({
   savePlayers,
   saveAttendees,
   clampPlayLimit,
-  renderRoster,
+  renderRoster: renderRosterUI,
   updateTabsUI,
   MAX_ATTENDEES,
   SKILLS,
@@ -824,7 +833,7 @@ function switchTab(which){
   const btnAllTimeRefreshEl = document.getElementById('btnAllTimeRefresh');
   if(btnAllTimeRefreshEl){ btnAllTimeRefreshEl.hidden = (which !== 'alltime'); }
   if(which === 'players'){
-    renderRoster(); // ensure lock state reflected immediately
+    renderRosterUI(); // ensure lock state reflected immediately
   } else if(which === 'alltime'){
     renderAllTime(true);
   }
@@ -1079,7 +1088,7 @@ function unlockBodyScroll(){
 // ----- Init -----
 loadState();
 // Initial UI
-renderRoster();
+renderRosterUI();
 renderTeams();
 renderSchedule(state, { resultModal, orderRoundPairings, computeStableSeedFromAttendees });
 renderLeaderboard();
