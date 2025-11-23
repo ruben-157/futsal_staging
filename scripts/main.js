@@ -386,12 +386,13 @@ function syncGenerateButton(){
   const hasTeams = state.teams && state.teams.length > 0;
   const minNeeded = 8;
   const enough = (state.attendees || []).length >= minNeeded;
-  btn.disabled = hasTeams || !enough;
-  if(!enough){
-    updateGenError(`Select at least ${minNeeded} players to generate teams.`);
-  } else {
-    updateGenError('');
+  if(hasTeams){
+    btn.disabled = true;
+    updateGenError('Players are locked — teams have been generated. Tap Start new match to generate again.');
+    return;
   }
+  btn.disabled = !enough;
+  updateGenError(enough ? '' : `Select at least ${minNeeded} players to generate teams.`);
 }
 
 function resetAll(){
