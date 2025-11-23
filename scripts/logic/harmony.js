@@ -1,7 +1,6 @@
 import { getSkill, getStamina } from '../data/config.js';
 
 const HARMONY_TOKENS = ['UnViZW58UmFtdGlu'];
-const HARMONY_PENALTY = 0.4;
 
 function decodeHarmonyToken(token){
   try{
@@ -23,14 +22,20 @@ const harmonyPairs = HARMONY_TOKENS
     return parts.length === 2 ? parts : null;
   })
   .filter(Boolean);
+
 const harmonyPairKeys = new Set(harmonyPairs.map(([a,b]) => [a,b].sort((x,y)=>x.localeCompare(y)).join('|')));
+const HARMONY_PENALTY = 0.4;
+
+export function isHarmonyPair(a,b){
+  if(!a || !b) return false;
+  return harmonyPairKeys.has([a,b].sort((x,y)=>x.localeCompare(y)).join('|'));
+}
 
 export function computeHarmonyBias(members=[], candidate){
   if(!candidate || !Array.isArray(members) || members.length === 0) return 0;
   let bias = 0;
   for(const member of members){
-    const key = [member, candidate].sort((x,y)=>x.localeCompare(y)).join('|');
-    if(harmonyPairKeys.has(key)){
+    if(isHarmonyPair(member, candidate)){
       bias += HARMONY_PENALTY;
     }
   }
@@ -57,8 +62,7 @@ export function applyRosterHarmonyFinal(teams){
         if(target.members && target.members.includes(counterpart)) continue;
         if(!Array.isArray(target.members) || target.members.length === 0) continue;
         for(const swapCandidate of target.members){
-          const key = [swapCandidate, counterpart].sort((x,y)=>x.localeCompare(y)).join('|');
-          if(harmonyPairKeys.has(key)) continue;
+          if(isHarmonyPair(swapCandidate, counterpart)) continue;
           const skillGap = Math.abs(getSkill(moving) - getSkill(swapCandidate));
           const staminaGap = Math.abs(getStamina(moving) - getStamina(swapCandidate)) * 0.05;
           const score = skillGap + staminaGap;

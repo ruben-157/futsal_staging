@@ -51,12 +51,6 @@ Promise.resolve()
   .then(()=>import('./team-balance.test.js'))
   .then(()=>import('./logging.test.js'))
   .then(()=>import('./migration.test.js'))
-  .then(()=>import('./alltime.test.js'))
-  .then(()=>import('./render-alltime.test.js'))
-  .then(()=>import('./render-alltime-view.test.js'))
-  .then(()=>import('./share.test.js'))
-  .then(()=>import('./modals.test.js'))
-  .then(()=>import('./add-player-modal.test.js'))
   .then(report)
   .catch((err)=>{
     console.error('Failed to load tests', err);

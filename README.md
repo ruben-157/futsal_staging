@@ -41,52 +41,10 @@ A mobile‑first, multi‑file static app to pick attendees, generate balanced t
 
 ## Dev - Tests
 - Minimal dev-only runner (no deps): `node scripts/tests/runner.js`.
-- Currently covers validation helpers, logging, migration, all-time parsing/badges/render helpers, share/email helpers, and team balance logic. Extend by adding more `*.test.js` files and importing them in `scripts/tests/runner.js`.
+- Currently covers validation helpers (storage sanitization and CSV parsing logic). Extend by adding more `*.test.js` files and importing them in `scripts/tests/runner.js`.
 
 ## Dev - Performance Checklist
 - See `docs/perf-checklist.md` for a quick manual perf pass (All-Time load/sort, modal open/close, roster interactions) with suggested thresholds and devices.
-
-## Recent Refactors (LLM handoff)
-- All-Time logic extracted to `scripts/logic/alltime.js` (CSV parse, aggregate, series, badges).
-- All-Time rendering split into:
-  - `scripts/render/alltime.js` (warning/empty notices, table builder),
-  - `scripts/render/alltimeView.js` (orchestrates notice/pill/cards/table),
-  - `scripts/render/alltimeHeader.js` (latest sync pill, header cards placeholder).
-- Tab renderers extracted:
-  - `scripts/render/players.js` → `renderRoster`
-  - `scripts/render/teams.js` → `renderTeams`
-  - `scripts/render/leaderboard.js` → `renderLeaderboard`
-  - `scripts/render/matches.js` → `renderSchedule` (full schedule rendering; uses result modal)
-- Result modal extracted to `scripts/modals/result.js`; attached via `attachResultModal` in `main.js`.
-- Share/email helpers extracted to `scripts/logic/share.js`; email button uses `emailSummary(state, computeGoalStats)`.
-- Legacy inline functions removed: old All-Time table, date formatters, old result modal, email builders.
-- Tests expanded (36 passing; one expected warning from malformed-JSON test): covers validation, logging, migration, all-time logic/render helpers, share/email, team balance, render notices, etc.
-
-### Wiring / Dependencies to be aware of
-- `renderSchedule` now lives in `scripts/render/matches.js` and expects `renderSchedule(state, { resultModal, orderRoundPairings, computeStableSeedFromAttendees })`. All call sites in `main.js` were bulk-replaced, but double-check whenever you touch schedule code.
-- Result modal is instantiated via `attachResultModal` in `main.js` and the instance is passed to the schedule renderer; any future schedule changes should keep using `resultModal.open(...)`.
-- Email summary uses `logic/share.js` (`emailSummary(state, computeGoalStats)`), and the leaderboard email button should be wired to that.
-- Tests: run `node scripts/tests/runner.js` (a warning about malformed JSON is expected from a test case).
-
-## What Still Needs Attention
-- Wire remaining modals out of `main.js` (add player, reset/end tournament, team count, remove round, player history modal).
-- Fully flesh out `buildAllTimeHeaderCards` in `scripts/render/alltimeHeader.js` (currently placeholder container).
-- Ensure all renderers are called with correct params after extractions (matches renderer now takes `state` and `{ resultModal, orderRoundPairings, computeStableSeedFromAttendees }`; check all call sites in `main.js`).
-- Clean up any leftover unused helpers or commented stubs in `main.js`; aim to make `main.js` an orchestrator only (imports state/actions/renderers/modals).
-- Consider adding tests for share/email button wiring and modal attach wiring (currently only pure helpers are tested).
-- Revisit All-Time sort/render guard: main uses cached rows; make sure header cards/pill use the new render module consistently.
-- Reintegrate player history modal rendering if any dependencies remain inline.
-
-## Current Structure (after refactor)
-- `scripts/logic`: `alltime.js`, `share.js`, `balance.js`, `random.js`, `validation.js`, `alltime` badge logic included in `alltime.js`.
-- `scripts/render`: `players.js`, `teams.js`, `leaderboard.js`, `matches.js`, `alltime.js`, `alltimeView.js`, `alltimeHeader.js`.
-- `scripts/modals`: `result.js` (others still inline in `main.js`).
-- `scripts/tests`: coverage for validation/logging/migration/alltime/share/render/balance; runner loads all tests.
-
-## Notes for Next LLM Session
-- Run tests with `node scripts/tests/runner.js` (warning from malformed JSON test is expected).
-- When extracting remaining modals/renderers, preserve IDs/ARIA and current behaviors; avoid changing UX.
-- Matches renderer now lives in `render/matches.js` and expects injected `resultModal`; ensure `main.js` passes the right dependencies wherever `renderSchedule` is called.
 - Latest match label: top-right muted label shows the most recent session date.
 - Header insight cards (clickable):
   - Largest Rank Gain / Largest Rank Loss (vs previous session ranks; based on Points with stable tie‑breakers).

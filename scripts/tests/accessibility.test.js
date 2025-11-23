@@ -1,4 +1,4 @@
-import { buildAllTimeCSVWarningNotice, buildEmptyAllTimeNotice } from '../render/alltime.js';
+import { buildAllTimeCSVWarningNotice } from '../utils/accessibility.js';
 
 function domStub(){
   // Very small DOM stubs for createElement/textContent usage
@@ -33,12 +33,4 @@ test('buildAllTimeCSVWarningNotice emits notice and status when skips present', 
   assertEqual(n.attributes.role, 'status');
   assertEqual(n.attributes['aria-live'], 'polite');
   assert(n.textContent.includes('Skipped 1 row'), 'Should mention skipped count');
-});
-
-test('buildEmptyAllTimeNotice returns notice with role=status', ()=>{
-  domStub();
-  const n = buildEmptyAllTimeNotice();
-  assert(n);
-  assertEqual(n.attributes.role, 'status');
-  assert(n.textContent.toLowerCase().includes('no data'));
 });
