@@ -331,7 +331,7 @@ function generateTeamsOverride(tOverride){
   state.rounds = 2;
   localStorage.removeItem(KEYS.prevRanks);
   saveTeams(); saveResults(); saveRounds();
-  renderTeams(state); renderRosterUI(); renderSchedule(state, { resultModal, orderRoundPairings, computeStableSeedFromAttendees }); renderLeaderboard();
+  renderTeams(state); renderRosterUI(); renderSchedule(state, { resultModal, orderRoundPairings, computeStableSeedFromAttendees }); renderLeaderboard(state);
   switchTab('teams'); updateTabsUI();
 }
 
@@ -394,7 +394,7 @@ function resetAll(){
   renderRosterUI();
   renderTeams(state);
   renderSchedule(state, { resultModal, orderRoundPairings, computeStableSeedFromAttendees });
-  renderLeaderboard();
+  renderLeaderboard(state);
   switchTab('players');
   updateTabsUI();
 }
@@ -436,7 +436,7 @@ function removeLastRound(r){
   saveResults();
   saveRounds();
   renderSchedule(state, { resultModal, orderRoundPairings, computeStableSeedFromAttendees });
-  renderLeaderboard();
+  renderLeaderboard(state);
 }
 
 // clearTeams replaced by resetAll (single reset action)
@@ -1091,7 +1091,7 @@ loadState();
 renderRosterUI();
 renderTeams(state);
 renderSchedule(state, { resultModal, orderRoundPairings, computeStableSeedFromAttendees });
-renderLeaderboard();
+renderLeaderboard(state);
 renderAllTime(true);
 clampPlayLimit();
 // Ensure buttons/visibility synced on first load
