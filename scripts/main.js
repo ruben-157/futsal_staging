@@ -670,10 +670,10 @@ function generateTeams(){
   saveTeams();
   saveResults();
   saveRounds();
-  renderTeams();
+  renderTeams(state);
   renderRosterUI();
   renderSchedule(state, { resultModal, orderRoundPairings, computeStableSeedFromAttendees });
-  renderLeaderboard();
+  renderLeaderboard(state);
   switchTab('teams');
   updateTabsUI();
 }
